@@ -6,6 +6,7 @@
     "no-console": false,
     "trailing-comma": false,
     "ordered-imports": false,
+    "object-literal-sort-keys": false,
     "curly": false
   },
   "rulesDirectory": []

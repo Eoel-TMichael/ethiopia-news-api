@@ -1,8 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import run from "./utils/airgram/airgram";
 
 dotenv.config();
+
+run();
 
 const app = express();
 
