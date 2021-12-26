@@ -1,3 +1,17 @@
+# Ethiopia Times News API
+## Fetching data from known and trusted sources
+
+## Getting started
+- create a dev account for [telegram api_key and api_hash](my.telegram.org)
+- Build TDLib library, use this [instruction](https://tdlib.github.io/td/build.html)
+- add the api_keys and hash to the enviroment variables
+- make sure you join the tikvah supergroup,
+ if you want to get messages from any group of you choice then add the groups chatId to the ChatId parameter of the getChatHistory Method
+- run yarn in terminal
+- then finaly run yarn dev
+
+
+
 ### Ethiopia Times News API, Fetching data from known and trusted sources
 Copyright © 2021 Joel Meles
 

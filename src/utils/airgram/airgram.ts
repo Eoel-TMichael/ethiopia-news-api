@@ -1,5 +1,7 @@
-import { Airgram, Auth, prompt, toObject } from "airgram";
+import { Airgram, Auth, prompt, toObject, MessagesUnion } from "airgram";
+import { telegramTikvahModel } from "../../../database/models/telegram_messages";
 import dotenv from "dotenv";
+import messageExtractor from "./message_extractor";
 
 dotenv.config();
 
@@ -9,8 +11,8 @@ console.log(API_ID);
 const airgram = new Airgram({
   apiId: Number.isInteger(API_ID) ? API_ID : 1000000,
   apiHash: process.env.API_HASH,
-  //  command: process.env.TDLIB_COMMAND,
-  //   databaseDirectory: "../../db",
+  command: process.env.TDLIB_COMMAND,
+  databaseDirectory: "./db",
   logVerbosityLevel: 2,
 });
 
@@ -21,18 +23,28 @@ airgram.use(
   })
 );
 
-let lastmessage;
-let wholelastmessage;
+// let lastmessage;
 
 const run = async () => {
   toObject(
     await airgram.api.getChats({ chatList: { _: "chatListMain" }, limit: 1 })
   );
-  const tikvah = toObject(
-    await airgram.api.getChat({ chatId: -1001130580549 })
-  );
-  lastmessage = tikvah.lastMessage?.id;
-  callChatHistory(lastmessage!);
+  /**
+   * 
+   * USE THIS CODE TO SAVE TIKVAH META MESSAGES TO MONGODB
+   * ALSO UNCOMMENT lastvariable VARIABLE
+   * 
+   * ONCE I SAVED ALL THE MESSAGE HISTORY AS METADATA
+   * CALLCHATHISTORY WILL NO LONGER BE USEFUL
+   * 
+   * */ 
+  //const tikvah = toObject(
+  //  await airgram.api.getChat({ chatId: -1001130580549 })
+  //);
+  //lastmessage = tikvah.lastMessage?.id;
+  //callChatHistory(lastmessage!);
+  const ret = await getChatMessages();
+  return ret;
 };
 
 async function callChatHistory(lastmessage: number) {
@@ -45,27 +57,32 @@ async function callChatHistory(lastmessage: number) {
       onlyLocal: false,
     })
   );
-  history.messages?.map((message) => {
-    switch (message.content._) {
-      case "messageText":
-        console.log(message.content.text.text);
-        break;
-      case "messagePhoto":
-        console.log(message.content.caption.text);
-        break;
-      case "messageDocument":
-        console.log(message.content.document.fileName);
-        break;
-      case "messagePinMessage":
-        console.log("Pinned Message" + message.content.messageId);
-        break;
-      default:
-        console.log("will do it some time soon, jumped for now.");
+  let tikvahMetaData;
+  history.messages?.map(async (message) => {
+    tikvahMetaData = new telegramTikvahModel(messageExtractor(message));
+    try {
+      await tikvahMetaData.save();
+    } catch (e) {
+      console.log("error" + e);
     }
   });
-  wholelastmessage = history.messages![history.messages!.length - 1];
-  lastmessage = wholelastmessage.id;
-  await callChatHistory(lastmessage);
+  // TODO make sure to re structure this before commiting
+  lastmessage = history.messages![history.messages!.length - 1].id;
+  callChatHistory(lastmessage);
 }
+
+async function getChatMessages() {
+  const messageIds: number[] = [];
+  const metaMessage = await telegramTikvahModel.find().sort({ messageId: -1 }).limit(10);
+  metaMessage.forEach((message) => {
+    messageIds.push(message.messageId);
+  });
+  return toObject(
+    await airgram.api.getMessages({
+      chatId: metaMessage[0].chatId,
+      messageIds,
+    })
+  );
+  }
 
 export default run;

@@ -5,17 +5,20 @@ import run from "./utils/airgram/airgram";
 
 dotenv.config();
 
-run();
-
 const app = express();
 
 mongoose.connect(process.env.MONGODB_URL!, (error) => {
   if (error) console.log(`ERROR\n=== === ===\n${error}`);
-  console.log("💮 connected to database");
+  console.log("💮 connected to database 💮");
 });
 
-app.get("/", (req, res) => {
-  res.json({ Hello: "HELLO" });
+app.get("/", async (req, res) => {
+  try {
+    const telegramTikvahMessages = await run();
+    res.json({ Hello: telegramTikvahMessages });
+  } catch(e) {
+    res.json({error: e})
+  }
 });
 
 const PORT = process.env.PORT || 3000;
