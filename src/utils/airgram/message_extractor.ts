@@ -1,11 +1,11 @@
 import { MessageUnion } from "airgram";
 
-const hashExtractor = (message: string) => {
+const hashExtractor = (message: string, ) => {
   const regex = /(#(?:[^\x00-\x7F]|\w)+)/g;
   return message.match(regex);
 };
 
-const messageExtractor = (message: MessageUnion) => {
+const messageExtractor = (message: MessageUnion, chatName: string) => {
   let hashtag;
 
   switch (message.content._) {
@@ -24,6 +24,7 @@ const messageExtractor = (message: MessageUnion) => {
   }
 
   const filteredMessage = {
+    chatName,
     chatId: message.chatId,
     date: message.date,
     messageId: message.id,

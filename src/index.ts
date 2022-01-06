@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import run from "./utils/airgram/airgram";
@@ -14,10 +14,19 @@ mongoose.connect(process.env.MONGODB_URL!, (error) => {
 
 app.get("/", async (req, res) => {
   try {
-    const telegramTikvahMessages = await run();
-    res.json({ Hello: telegramTikvahMessages });
-  } catch(e) {
-    res.json({error: e})
+    res.json({ Hello: "Hello" });
+  } catch (e) {
+    res.json({ error: e });
+  }
+});
+
+app.get("/source/:name", async (req, res, next) => {
+  const source = req.params.name;
+  try {
+    const newsSource = await run(source);
+    res.json({"news source": "DONE"});
+  } catch (e) {
+    res.json({error: `ERROR: ${e}`});
   }
 });
 

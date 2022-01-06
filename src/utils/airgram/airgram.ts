@@ -1,5 +1,5 @@
 import { Airgram, Auth, prompt, toObject, MessagesUnion } from "airgram";
-import { telegramTikvahModel } from "../../../database/models/telegram_messages";
+import { telegramModel } from "../../../database/models/telegram_messages";
 import dotenv from "dotenv";
 import messageExtractor from "./message_extractor";
 
@@ -23,57 +23,98 @@ airgram.use(
   })
 );
 
-// let lastmessage;
+let lastmessage;
 
-const run = async () => {
+const run = async (source: string) => {
   toObject(
     await airgram.api.getChats({ chatList: { _: "chatListMain" }, limit: 1 })
   );
   /**
-   * 
-   * USE THIS CODE TO SAVE TIKVAH META MESSAGES TO MONGODB
+   *
+   * USE THIS CODE BELOW TO SAVE CHANNEL'S META MESSAGES TO MONGODB
    * ALSO UNCOMMENT lastvariable VARIABLE
-   * 
+   *
    * ONCE I SAVED ALL THE MESSAGE HISTORY AS METADATA
    * CALLCHATHISTORY WILL NO LONGER BE USEFUL
-   * 
-   * */ 
-  //const tikvah = toObject(
-  //  await airgram.api.getChat({ chatId: -1001130580549 })
-  //);
-  //lastmessage = tikvah.lastMessage?.id;
-  //callChatHistory(lastmessage!);
-  const ret = await getChatMessages();
-  return ret;
+   *
+   * */
+  
+
+  let sourceObject;
+  let chatId;
+
+
+  switch (source) {
+    case 'tikvah':
+      chatId = -1001130580549
+      sourceObject = toObject(
+        await airgram.api.getChat({ chatId })
+      );
+      lastmessage = sourceObject.lastMessage?.id;
+      callChatHistory(lastmessage!, source, chatId);
+      break;
+    case 'ebs-news':
+      chatId = -1001185190358;
+
+      sourceObject = toObject(
+        await airgram.api.getChat({ chatId })
+      );
+      lastmessage = sourceObject.lastMessage?.id;
+      callChatHistory(lastmessage!, source, chatId);
+      break;
+      // USE KANA-TV'S CHAT-ID
+    // case 'kana-tv':
+    //   console.log('run the function(kana-tvChatId)');
+    //   sourceObject = toObject(
+    //     await airgram.api.getChat({ chatId: -1001130580549 })
+    //   );
+    //   lastmessage = sourceObject.lastMessage?.id;
+    //   callChatHistory(lastmessage!, source, -1001130580549);
+    //   break;
+    default:
+      console.log('Chat is not There yet');
+  }
+  // based on the source name fetch the last few messages from mongoDB
+  // all the meta messages should be in the same collection
+  // const data = await telegramModel.find()
+  // const ret = await getChatMessages();
+  // return ret;
 };
 
-async function callChatHistory(lastmessage: number) {
+let savedMetaMessage;
+
+async function callChatHistory(lastmessage: number, source: string, chatId: number) {
   const history = toObject(
     await airgram.api.getChatHistory({
-      chatId: -1001130580549,
+      chatId: chatId,
       fromMessageId: lastmessage,
       offset: 0,
       limit: 10,
       onlyLocal: false,
     })
   );
-  let tikvahMetaData;
+  let sourceMetaData;
   history.messages?.map(async (message) => {
-    tikvahMetaData = new telegramTikvahModel(messageExtractor(message));
+    sourceMetaData = new telegramModel(messageExtractor(message, source));
     try {
-      await tikvahMetaData.save();
+      savedMetaMessage = await sourceMetaData.save((err: Error) => {
+        console.log(err);
+      });
     } catch (e) {
       console.log("error" + e);
     }
   });
   // TODO make sure to re structure this before commiting
   lastmessage = history.messages![history.messages!.length - 1].id;
-  callChatHistory(lastmessage);
+  callChatHistory(lastmessage, source, chatId);
 }
 
 async function getChatMessages() {
   const messageIds: number[] = [];
-  const metaMessage = await telegramTikvahModel.find().sort({ messageId: -1 }).limit(10);
+  const metaMessage = await telegramModel
+    .find()
+    .sort({ messageId: -1 })
+    .limit(10);
   metaMessage.forEach((message) => {
     messageIds.push(message.messageId);
   });
@@ -83,6 +124,6 @@ async function getChatMessages() {
       messageIds,
     })
   );
-  }
+}
 
 export default run;
