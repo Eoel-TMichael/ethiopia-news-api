@@ -1,0 +1,21 @@
+ETHIOPIA TIMES
+😊 HAPPY CODING
+
+    TODAYS AGENDA DEC-26-2021
+        [✔] - fetch tikvah messages from the database through their date and console log the actual message
+            * recieve the the meta message from mongodb
+            * use getMessage to to get the message from telegram tikvah
+            * log it
+        [✔] - remove unnesesarry stuff from the retrived message
+        [✔] - refine and factor the code
+        [❌] - make the repo private // more interesting when public
+        [✔] - push update with "The bare minimum woking product" message
+        [✔] - add todays_agenda.txt to .env
+
+    TOMORROW'S AGENDA DEC-27-2021
+        [] - add the update method for the superchats
+            * calls the "updateChatLastMessage"
+            * add it to the supergroup's meta message
+            * [think about a way to] then update the chat position
+
+        [] - make sure the hashtags are saved in their own collection also
