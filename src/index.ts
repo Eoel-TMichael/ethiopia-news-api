@@ -2,10 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import run from "./utils/airgram/airgram";
+// import redisClient from "../database/redis/redis_client";
 
 dotenv.config();
 
-run();
+run("tikvah");
 
 const app = express();
 
