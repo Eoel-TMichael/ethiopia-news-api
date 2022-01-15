@@ -1,10 +1,10 @@
-import { Airgram, Auth, prompt, toObject, MessagesUnion } from "airgram";
+import { Airgram, Auth, prompt, toObject, MessagesUnion, MessageContentUnion } from "airgram";
 import telegramMessageModel from "../../../database/models/telegram/messages";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-interface MetaMessage {
+interface IMetaMessage {
   message_id: number;
   data: Date;
   souce: string;
@@ -31,7 +31,7 @@ airgram.use(
 
 let lastmessage;
 
-const run = async (source: string) => {
+const run = async () => {
   const chats = toObject(
     await airgram.api.getChats({ chatList: { _: "chatListMain" }, limit: 1 })
   );
@@ -45,45 +45,17 @@ const run = async (source: string) => {
    *
    */
 
-  let sourceObject;
-  let chatId;
+  // let sourceObject;
+  // let chatId;
 
-  switch (source) {
-    case "tikvah":
-      chatId = -1001130580549;
-      sourceObject = toObject(await airgram.api.getChat({ chatId }));
-      lastmessage = sourceObject.lastMessage?.id;
-      // callChatHistory(lastmessage!, source, chatId);
-      break;
-    case "ebs-news":
-      chatId = -1001185190358;
-
-      sourceObject = toObject(await airgram.api.getChat({ chatId }));
-      lastmessage = sourceObject.lastMessage?.id;
-      // callChatHistory(lastmessage!, source, chatId);
-      break;
-    // USE KANA-TV'S CHAT-ID
-    // case 'kana-tv':
-    //   console.log('run the function(kana-tvChatId)');
-    //   sourceObject = toObject(
-    //     await airgram.api.getChat({ chatId: -1001130580549 })
-    //   );
-    //   lastmessage = sourceObject.lastMessage?.id;
-    //   callChatHistory(lastmessage!, source, -1001130580549);
-    //   break;
-    default:
-      chatId = 0;
-      console.log("Chat is not There yet");
-  }
   // based on the source name fetch the last few messages from mongoDB
   // all the meta messages should be in the same collection
   // const data = await telegramModel.find()
   // const ret = await getChatMessages();
   // return ret;
-  await getChatMessages(chatId);
 };
 
-let savedMetaMessage;
+// let savedMetaMessage;
 
 // async function callChatHistory(lastmessage: number, source: string, chatId: number) {
 //   const history = toObject(
@@ -113,9 +85,31 @@ let savedMetaMessage;
 //   callChatHistory(lastmessage, source, chatId);
 // }
 //  1970-01-20T00:06:32.062+00:00
-async function getChatMessages(chatId: number) {
+async function getChatMessages(source: string, date: Date) {
+  let chatId = 0;
+  switch (source) {
+    case "tikvah":
+      chatId = -1001130580549;
+      break;
+    case "ebs-news":
+      chatId = -1001185190358;
+      break;
+    // USE KANA-TV'S CHAT-ID
+    // case 'kana-tv':
+    //   console.log('run the function(kana-tvChatId)');
+    //   sourceObject = toObject(
+    //     await airgram.api.getChat({ chatId: -1001130580549 })
+    //   );
+    //   lastmessage = sourceObject.lastMessage?.id;
+    //   callChatHistory(lastmessage!, source, -1001130580549);
+    //   break;
+    default:
+      console.log("Chat is not There yet");
+  }
+  const d = new Date(date).toISOString();
+  console.log("THE DATE SEND IS: " + d);
   const metaMessage = await telegramMessageModel.find({
-    date: "1970-01-20T00:06:32.062+00:00",
+    date: { $lt: d },
   });
 
   const metaMessagesIds: number[] = [];
@@ -125,17 +119,28 @@ async function getChatMessages(chatId: number) {
       metaMessagesIds.push(element?.message_id);
     });
     console.log("Got Here");
-    const messages = toObject(
+    const messages: MessagesUnion = toObject(
       await airgram.api.getMessages({
         chatId,
         messageIds: metaMessagesIds,
       })
     );
-    console.log(messages.totalCount);
-    messages.messages?.forEach((message) => {
-      console.log(message.content._);
-    });
+    const sentMessages: MessageContentUnion[] = [];
+    // for (let k in messages["messages"]) {
+    //   sentMessages.push(k.);
+
+    // }
+    // console.log("MESSAGE VALUES" + Object.values(messages) + "\nTYPE OF "+ typeof messages["messages"] + "\nMESSAGES");
+    
+    messages.messages?.forEach(message => {
+      // console.log(message.chatId);
+      if (message != null ) sentMessages.push(message.content);
+    })
+    
+    
+    return sentMessages;
   }
 }
 
 export default run;
+export { getChatMessages };
